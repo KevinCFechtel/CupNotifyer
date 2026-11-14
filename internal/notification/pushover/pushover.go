@@ -11,13 +11,15 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/KevinCFechtel/CupNotifyer/internal/notification"
 	"github.com/KevinCFechtel/CupNotifyer/internal/update"
 )
 
 const (
-	pushoverAPIURL    = "https://api.pushover.net/1/messages.json"
-	maxMessageRunes   = 1024
-	notificationTitle = "Container-Update verfügbar"
+	pushoverAPIURL  = "https://api.pushover.net/1/messages.json"
+	maxMessageRunes = 1024
+	updateTitle     = "Container-Update verfügbar"
+	startupTitle    = "CupNotifyer gestartet"
 )
 
 type Notifier struct {
@@ -49,14 +51,26 @@ func (n *Notifier) ID() string {
 	return n.targetID
 }
 
+func (n *Notifier) SendStartup(ctx context.Context, startup notification.Startup) error {
+	message := fmt.Sprintf(
+		"Der Service wurde gestartet und prüft Cup alle %s auf Image-Updates.",
+		startup.PollInterval,
+	)
+	return n.send(ctx, startupTitle, message, "")
+}
+
 func (n *Notifier) Send(ctx context.Context, available update.Available) error {
+	return n.send(ctx, updateTitle, formatMessage(available), safeProjectURL(available.URL))
+}
+
+func (n *Notifier) send(ctx context.Context, title, message, projectURL string) error {
 	form := url.Values{
 		"token":   {n.apiToken},
 		"user":    {n.userKey},
-		"title":   {notificationTitle},
-		"message": {truncateMessage(formatMessage(available))},
+		"title":   {title},
+		"message": {truncateMessage(message)},
 	}
-	if projectURL := safeProjectURL(available.URL); projectURL != "" {
+	if projectURL != "" {
 		form.Set("url", projectURL)
 		form.Set("url_title", "Projekt öffnen")
 	}

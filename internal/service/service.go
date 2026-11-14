@@ -39,6 +39,7 @@ func New(
 }
 
 func (s *Service) Run(ctx context.Context) {
+	s.sendStartup(ctx)
 	s.poll(ctx)
 
 	ticker := time.NewTicker(s.pollInterval)
@@ -51,6 +52,22 @@ func (s *Service) Run(ctx context.Context) {
 		case <-ticker.C:
 			s.poll(ctx)
 		}
+	}
+}
+
+func (s *Service) sendStartup(ctx context.Context) {
+	startup := notification.Startup{PollInterval: s.pollInterval}
+	for _, notifier := range s.notifiers {
+		if err := notifier.SendStartup(ctx, startup); err != nil {
+			if ctx.Err() == nil {
+				s.logger.Error("failed to send startup notification",
+					"target", notifier.ID(),
+					"error", err,
+				)
+			}
+			continue
+		}
+		s.logger.Info("startup notification sent", "target", notifier.ID())
 	}
 }
 
