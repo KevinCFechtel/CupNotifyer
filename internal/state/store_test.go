@@ -12,16 +12,16 @@ func TestFileStorePersistsTargetState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewFileStore() error = %v", err)
 	}
-	if store.IsSent("telegram:1", "server|image", "version:v2") {
+	if store.IsSent("pushover:1", "server|image", "version:v2") {
 		t.Fatal("new store unexpectedly contains notification state")
 	}
-	if err := store.MarkSent("telegram:1", "server|image", "version:v2"); err != nil {
+	if err := store.MarkSent("pushover:1", "server|image", "version:v2"); err != nil {
 		t.Fatalf("MarkSent() error = %v", err)
 	}
-	if !store.IsSent("telegram:1", "server|image", "version:v2") {
+	if !store.IsSent("pushover:1", "server|image", "version:v2") {
 		t.Fatal("state was not updated")
 	}
-	if store.IsSent("telegram:2", "server|image", "version:v2") {
+	if store.IsSent("pushover:2", "server|image", "version:v2") {
 		t.Fatal("state leaked into another target")
 	}
 
@@ -29,7 +29,7 @@ func TestFileStorePersistsTargetState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("reloading store: %v", err)
 	}
-	if !reloaded.IsSent("telegram:1", "server|image", "version:v2") {
+	if !reloaded.IsSent("pushover:1", "server|image", "version:v2") {
 		t.Fatal("persisted state was not reloaded")
 	}
 }

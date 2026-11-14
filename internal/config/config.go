@@ -21,8 +21,8 @@ type Config struct {
 	PollInterval     time.Duration
 	HTTPTimeout      time.Duration
 	StateFile        string
-	TelegramBotToken string
-	TelegramChatID   string
+	PushoverAPIToken string
+	PushoverUserKey  string
 	LogLevel         slog.Level
 }
 
@@ -30,8 +30,8 @@ func Load() (Config, error) {
 	cfg := Config{
 		CupAPIURL:        strings.TrimSpace(os.Getenv("CUP_API_URL")),
 		StateFile:        envOrDefault("STATE_FILE", defaultStateFile),
-		TelegramBotToken: strings.TrimSpace(os.Getenv("TELEGRAM_BOT_TOKEN")),
-		TelegramChatID:   strings.TrimSpace(os.Getenv("TELEGRAM_CHAT_ID")),
+		PushoverAPIToken: strings.TrimSpace(os.Getenv("PUSHOVER_API_TOKEN")),
+		PushoverUserKey:  strings.TrimSpace(os.Getenv("PUSHOVER_USER_KEY")),
 		LogLevel:         slog.LevelInfo,
 	}
 
@@ -63,11 +63,11 @@ func Load() (Config, error) {
 	if err != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.Host == "" {
 		return Config{}, errors.New("CUP_API_URL must be a valid http or https URL")
 	}
-	if cfg.TelegramBotToken == "" {
-		return Config{}, errors.New("TELEGRAM_BOT_TOKEN is required")
+	if cfg.PushoverAPIToken == "" {
+		return Config{}, errors.New("PUSHOVER_API_TOKEN is required")
 	}
-	if cfg.TelegramChatID == "" {
-		return Config{}, errors.New("TELEGRAM_CHAT_ID is required")
+	if cfg.PushoverUserKey == "" {
+		return Config{}, errors.New("PUSHOVER_USER_KEY is required")
 	}
 	if strings.TrimSpace(cfg.StateFile) == "" {
 		return Config{}, errors.New("STATE_FILE must not be empty")

@@ -56,7 +56,7 @@ func TestPollDeduplicatesPerTarget(t *testing.T) {
 		NewTag:    "v2",
 	}}}
 	store := &memoryStore{sent: make(map[string]string)}
-	first := &fakeNotifier{id: "telegram:1"}
+	first := &fakeNotifier{id: "pushover:1"}
 	second := &fakeNotifier{id: "webhook:1"}
 	service := New(
 		source,
@@ -87,7 +87,7 @@ func TestPollRetriesFailedTarget(t *testing.T) {
 		RemoteDigest: "sha256:new",
 	}}}
 	store := &memoryStore{sent: make(map[string]string)}
-	failing := &fakeNotifier{id: "telegram:1", sendErr: errors.New("temporary failure")}
+	failing := &fakeNotifier{id: "pushover:1", sendErr: errors.New("temporary failure")}
 	successful := &fakeNotifier{id: "webhook:1"}
 	service := New(
 		source,
