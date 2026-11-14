@@ -80,13 +80,15 @@ requests, pushes to `main`, version tags, manual runs, and a weekly schedule. It
   builds the binary;
 - checks reachable Go vulnerabilities with `govulncheck`;
 - reviews dependency changes in pull requests and runs CodeQL;
-- builds the container and blocks publication on high or critical image
-  vulnerabilities;
+- builds and scans the container only for semantic version tags and blocks
+  publication on high or critical image vulnerabilities;
 - publishes `linux/amd64` and `linux/arm64` images with an SBOM and provenance
   to `ghcr.io/<owner>/<repository>`.
 
-Successful pushes to `main` publish `latest`, `main`, and commit-SHA tags.
-Version tags such as `v1.2.3` additionally publish semantic version tags.
+Normal commits and pull requests only run tests and security checks. They do
+not build or publish a container image. A semantic version tag such as
+`v1.2.3` publishes the release, semantic version, commit-SHA, and `latest`
+image tags.
 
 Dependabot checks Go modules, GitHub Actions, and Docker base images weekly.
 Workflow actions are pinned to commit SHAs to reduce supply-chain risk.
