@@ -1,7 +1,7 @@
 # CupNotifyer
 
 CupNotifyer polls [Cup](https://github.com/sergi0g/cup)'s v3 JSON API and sends a
-Telegram message for every newly detected container image update.
+Pushover notification for every newly detected container image update.
 
 The last successfully notified version or digest is stored on disk. This avoids
 duplicate messages across polls and container restarts. Notification providers
@@ -10,8 +10,8 @@ are behind a small Go interface so additional targets can be added independently
 ## Requirements
 
 - A running Cup server with `/api/v3/json` available
-- A Telegram bot token
-- The target chat ID
+- A Pushover application API token
+- A Pushover user or group key
 - Docker Compose, or Go 1.27+
 
 ## Run with Docker Compose
@@ -22,7 +22,7 @@ are behind a small Go interface so additional targets can be added independently
    cp .env.example .env
    ```
 
-2. Set `CUP_API_URL`, `TELEGRAM_BOT_TOKEN`, and `TELEGRAM_CHAT_ID` in `.env`.
+2. Set `CUP_API_URL`, `PUSHOVER_API_TOKEN`, and `PUSHOVER_USER_KEY` in `.env`.
 
 3. Start the service:
 
@@ -51,10 +51,10 @@ so Cup checks registries regularly; CupNotifyer then polls those results at
 | Variable | Required | Default | Description |
 | --- | --- | --- | --- |
 | `CUP_API_URL` | yes | - | Full Cup endpoint, e.g. `http://cup:8000/api/v3/json` |
-| `TELEGRAM_BOT_TOKEN` | yes | - | Token created by BotFather |
-| `TELEGRAM_CHAT_ID` | yes | - | User, group, or channel chat ID |
+| `PUSHOVER_API_TOKEN` | yes | - | Pushover application API token |
+| `PUSHOVER_USER_KEY` | yes | - | Pushover user or group key |
 | `POLL_INTERVAL` | no | `5m` | Interval in Go duration syntax |
-| `HTTP_TIMEOUT` | no | `15s` | Timeout for Cup and Telegram requests |
+| `HTTP_TIMEOUT` | no | `15s` | Timeout for Cup and Pushover requests |
 | `STATE_FILE` | no | `/data/state.json` | Persistent notification state |
 | `LOG_LEVEL` | no | `info` | `debug`, `info`, `warn`, or `error` |
 
@@ -65,8 +65,8 @@ The Compose setup stores `/data/state.json` in the named
 
 ```sh
 export CUP_API_URL=http://localhost:8000/api/v3/json
-export TELEGRAM_BOT_TOKEN=...
-export TELEGRAM_CHAT_ID=...
+export PUSHOVER_API_TOKEN=...
+export PUSHOVER_USER_KEY=...
 export STATE_FILE=./data/state.json
 go run ./cmd/cupnotifier
 ```
@@ -101,4 +101,4 @@ docker pull ghcr.io/kevincfechtel/cupnotifyer:latest
 
 Implement `internal/notification.Notifier` and register the implementation in
 `cmd/cupnotifier/main.go`. State is tracked separately for every notifier ID, so
-a newly added target receives updates independently from Telegram.
+a newly added target receives updates independently from Pushover.

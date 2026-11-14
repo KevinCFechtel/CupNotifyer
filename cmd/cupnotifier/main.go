@@ -11,7 +11,7 @@ import (
 	"github.com/KevinCFechtel/CupNotifyer/internal/config"
 	"github.com/KevinCFechtel/CupNotifyer/internal/cup"
 	"github.com/KevinCFechtel/CupNotifyer/internal/notification"
-	"github.com/KevinCFechtel/CupNotifyer/internal/notification/telegram"
+	"github.com/KevinCFechtel/CupNotifyer/internal/notification/pushover"
 	"github.com/KevinCFechtel/CupNotifyer/internal/service"
 	"github.com/KevinCFechtel/CupNotifyer/internal/state"
 )
@@ -37,7 +37,7 @@ func main() {
 	}
 
 	notifiers := []notification.Notifier{
-		telegram.New(cfg.TelegramBotToken, cfg.TelegramChatID, httpClient),
+		pushover.New(cfg.PushoverAPIToken, cfg.PushoverUserKey, httpClient),
 	}
 	runner := service.New(cupClient, store, notifiers, cfg.PollInterval, logger)
 
