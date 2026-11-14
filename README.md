@@ -2,6 +2,7 @@
 
 CupNotifyer polls [Cup](https://github.com/sergi0g/cup)'s v3 JSON API and sends a
 Pushover notification for every newly detected container image update.
+It also sends one startup notification whenever the service process starts.
 
 The last successfully notified version or digest is stored on disk. This avoids
 duplicate messages across polls and container restarts. Notification providers

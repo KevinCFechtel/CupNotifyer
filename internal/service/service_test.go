@@ -35,9 +35,11 @@ func (m *memoryStore) MarkSent(targetID, imageID, updateID string) error {
 }
 
 type fakeNotifier struct {
-	id      string
-	sends   int
-	sendErr error
+	id           string
+	sends        int
+	startupSends int
+	sendErr      error
+	startupErr   error
 }
 
 func (f *fakeNotifier) ID() string {
@@ -47,6 +49,29 @@ func (f *fakeNotifier) ID() string {
 func (f *fakeNotifier) Send(context.Context, update.Available) error {
 	f.sends++
 	return f.sendErr
+}
+
+func (f *fakeNotifier) SendStartup(context.Context, notification.Startup) error {
+	f.startupSends++
+	return f.startupErr
+}
+
+func TestSendStartupNotifiesEveryTarget(t *testing.T) {
+	first := &fakeNotifier{id: "pushover:1"}
+	second := &fakeNotifier{id: "webhook:1", startupErr: errors.New("temporary failure")}
+	service := New(
+		&fakeSource{},
+		&memoryStore{sent: make(map[string]string)},
+		[]notification.Notifier{first, second},
+		5*time.Minute,
+		slog.New(slog.NewTextHandler(io.Discard, nil)),
+	)
+
+	service.sendStartup(context.Background())
+
+	if first.startupSends != 1 || second.startupSends != 1 {
+		t.Fatalf("startup send counts = %d, %d; want 1, 1", first.startupSends, second.startupSends)
+	}
 }
 
 func TestPollDeduplicatesPerTarget(t *testing.T) {
