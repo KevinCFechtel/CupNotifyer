@@ -12,7 +12,7 @@ are behind a small Go interface so additional targets can be added independently
 - A running Cup server with `/api/v3/json` available
 - A Telegram bot token
 - The target chat ID
-- Docker Compose, or Go 1.24+
+- Docker Compose, or Go 1.27+
 
 ## Run with Docker Compose
 
@@ -69,6 +69,30 @@ export TELEGRAM_BOT_TOKEN=...
 export TELEGRAM_CHAT_ID=...
 export STATE_FILE=./data/state.json
 go run ./cmd/cupnotifier
+```
+
+## CI, security, and container publishing
+
+The GitHub Actions workflow in `.github/workflows/ci.yml` runs for pull
+requests, pushes to `main`, version tags, manual runs, and a weekly schedule. It:
+
+- checks formatting, runs tests with the race detector, runs `go vet`, and
+  builds the binary;
+- checks reachable Go vulnerabilities with `govulncheck`;
+- reviews dependency changes in pull requests and runs CodeQL;
+- builds the container and blocks publication on high or critical image
+  vulnerabilities;
+- publishes `linux/amd64` and `linux/arm64` images with an SBOM and provenance
+  to `ghcr.io/<owner>/<repository>`.
+
+Successful pushes to `main` publish `latest`, `main`, and commit-SHA tags.
+Version tags such as `v1.2.3` additionally publish semantic version tags.
+
+Dependabot checks Go modules, GitHub Actions, and Docker base images weekly.
+Workflow actions are pinned to commit SHAs to reduce supply-chain risk.
+
+```sh
+docker pull ghcr.io/kevincfechtel/cupnotifyer:latest
 ```
 
 ## Add another notification target
