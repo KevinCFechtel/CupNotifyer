@@ -62,6 +62,14 @@ so Cup checks registries regularly; CupNotifyer then polls those results at
 The Compose setup stores `/data/state.json` in the named
 `cupnotifier-data` volume.
 
+All application and healthcheck errors are written as human-readable,
+single-line text to standard output. For example:
+
+```text
+2026-11-15 07:32:52 [ERROR] healthcheck failed: connection refused
+2026-11-15 07:33:00 [INFO] notification sent (target=pushover:…, image=ghcr.io/…)
+```
+
 ## Container healthcheck
 
 The image checks external connectivity every 30 seconds by requesting the
@@ -77,7 +85,7 @@ group `65532`.
 Run it manually with:
 
 ```sh
-docker exec <container> /usr/local/bin/cupnotifier healthcheck
+docker exec <container> /cupnotifier healthcheck
 ```
 
 ## Run locally

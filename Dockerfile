@@ -16,10 +16,10 @@ FROM scratch
 
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build --chown=65532:65532 /out/data /data
-COPY --from=build --chown=65532:65532 /out/cupnotifier /usr/local/bin/cupnotifier
+COPY --from=build --chown=65532:65532 /out/cupnotifier /cupnotifier
 
 USER 65532:65532
 VOLUME ["/data"]
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD ["/usr/local/bin/cupnotifier", "healthcheck"]
-ENTRYPOINT ["/usr/local/bin/cupnotifier"]
+    CMD ["/cupnotifier", "healthcheck"]
+ENTRYPOINT ["/cupnotifier"]
