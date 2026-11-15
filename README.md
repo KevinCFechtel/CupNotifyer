@@ -2,7 +2,6 @@
 
 CupNotifyer polls [Cup](https://github.com/sergi0g/cup)'s v3 JSON API and sends a
 Pushover notification for every newly detected container image update.
-It also sends one startup notification whenever the service process starts.
 
 The last successfully notified version or digest is stored on disk. This avoids
 duplicate messages across polls and container restarts. Notification providers
@@ -56,11 +55,30 @@ so Cup checks registries regularly; CupNotifyer then polls those results at
 | `PUSHOVER_USER_KEY` | yes | - | Pushover user or group key |
 | `POLL_INTERVAL` | no | `5m` | Interval in Go duration syntax |
 | `HTTP_TIMEOUT` | no | `15s` | Timeout for Cup and Pushover requests |
+| `HEALTHCHECK_URL` | no | `https://api.pushover.net/1/` | External endpoint used to verify internet connectivity |
 | `STATE_FILE` | no | `/data/state.json` | Persistent notification state |
 | `LOG_LEVEL` | no | `info` | `debug`, `info`, `warn`, or `error` |
 
 The Compose setup stores `/data/state.json` in the named
 `cupnotifier-data` volume.
+
+## Container healthcheck
+
+The image checks external connectivity every 30 seconds by requesting the
+Pushover API over HTTPS. Docker marks the container as unhealthy after three
+consecutive failures. The check sends no notification and requires no Pushover
+credentials.
+
+The runtime image is built `FROM scratch` and contains only the statically
+linked Go binary, CA certificates for HTTPS, and the writable `/data`
+directory. It has no shell or package manager and runs as numeric user and
+group `65532`.
+
+Run it manually with:
+
+```sh
+docker exec <container> /usr/local/bin/cupnotifier healthcheck
+```
 
 ## Run locally
 
