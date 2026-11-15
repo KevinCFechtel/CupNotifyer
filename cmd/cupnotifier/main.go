@@ -13,6 +13,7 @@ import (
 	"github.com/KevinCFechtel/CupNotifyer/internal/config"
 	"github.com/KevinCFechtel/CupNotifyer/internal/cup"
 	"github.com/KevinCFechtel/CupNotifyer/internal/health"
+	"github.com/KevinCFechtel/CupNotifyer/internal/logging"
 	"github.com/KevinCFechtel/CupNotifyer/internal/notification"
 	"github.com/KevinCFechtel/CupNotifyer/internal/notification/pushover"
 	"github.com/KevinCFechtel/CupNotifyer/internal/service"
@@ -20,6 +21,8 @@ import (
 )
 
 func main() {
+	slog.SetDefault(slog.New(logging.NewHandler(os.Stdout, slog.LevelInfo)))
+
 	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
 		runHealthcheck()
 		return
@@ -31,9 +34,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: cfg.LogLevel,
-	}))
+	logger := slog.New(logging.NewHandler(os.Stdout, cfg.LogLevel))
 	slog.SetDefault(logger)
 
 	httpClient := &http.Client{Timeout: cfg.HTTPTimeout}
