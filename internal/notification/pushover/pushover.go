@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/KevinCFechtel/CupNotifyer/internal/notification"
 	"github.com/KevinCFechtel/CupNotifyer/internal/update"
 )
 
@@ -19,7 +18,6 @@ const (
 	pushoverAPIURL  = "https://api.pushover.net/1/messages.json"
 	maxMessageRunes = 1024
 	updateTitle     = "Container-Update verfügbar"
-	startupTitle    = "CupNotifyer gestartet"
 )
 
 type Notifier struct {
@@ -49,14 +47,6 @@ func New(apiToken, userKey string, httpClient *http.Client) *Notifier {
 
 func (n *Notifier) ID() string {
 	return n.targetID
-}
-
-func (n *Notifier) SendStartup(ctx context.Context, startup notification.Startup) error {
-	message := fmt.Sprintf(
-		"Der Service wurde gestartet und prüft Cup alle %s auf Image-Updates.",
-		startup.PollInterval,
-	)
-	return n.send(ctx, startupTitle, message, "")
 }
 
 func (n *Notifier) Send(ctx context.Context, available update.Available) error {

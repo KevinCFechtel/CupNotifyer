@@ -6,10 +6,13 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
+	"time"
 
 	"github.com/KevinCFechtel/CupNotifyer/internal/config"
 	"github.com/KevinCFechtel/CupNotifyer/internal/cup"
+	"github.com/KevinCFechtel/CupNotifyer/internal/health"
 	"github.com/KevinCFechtel/CupNotifyer/internal/notification"
 	"github.com/KevinCFechtel/CupNotifyer/internal/notification/pushover"
 	"github.com/KevinCFechtel/CupNotifyer/internal/service"
@@ -17,6 +20,11 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
+		runHealthcheck()
+		return
+	}
+
 	cfg, err := config.Load()
 	if err != nil {
 		slog.Error("invalid configuration", "error", err)
@@ -51,4 +59,20 @@ func main() {
 	)
 	runner.Run(ctx)
 	logger.Info("cup notifier stopped")
+}
+
+func runHealthcheck() {
+	endpoint := strings.TrimSpace(os.Getenv("HEALTHCHECK_URL"))
+	if endpoint == "" {
+		endpoint = health.DefaultEndpoint
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
+	defer cancel()
+
+	checker := health.NewChecker(endpoint, &http.Client{})
+	if err := checker.Check(ctx); err != nil {
+		slog.Error("healthcheck failed", "error", err)
+		os.Exit(1)
+	}
 }

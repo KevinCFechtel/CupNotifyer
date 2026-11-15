@@ -6,9 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/KevinCFechtel/CupNotifyer/internal/notification"
 	"github.com/KevinCFechtel/CupNotifyer/internal/update"
 )
 
@@ -53,35 +51,6 @@ func TestSend(t *testing.T) {
 	}
 	if strings.Contains(notifier.ID(), "user-key") {
 		t.Fatal("notifier ID exposes the Pushover user key")
-	}
-}
-
-func TestSendStartup(t *testing.T) {
-	var title string
-	var message string
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := r.ParseForm(); err != nil {
-			t.Fatalf("ParseForm(): %v", err)
-		}
-		title = r.Form.Get("title")
-		message = r.Form.Get("message")
-		_, _ = w.Write([]byte(`{"status":1,"request":"request-id"}`))
-	}))
-	defer server.Close()
-
-	notifier := New("app-token", "user-key", server.Client())
-	notifier.apiURL = server.URL
-	err := notifier.SendStartup(context.Background(), notification.Startup{
-		PollInterval: 5 * time.Minute,
-	})
-	if err != nil {
-		t.Fatalf("SendStartup() error = %v", err)
-	}
-	if title != startupTitle {
-		t.Errorf("title = %q, want %q", title, startupTitle)
-	}
-	if !strings.Contains(message, "5m0s") {
-		t.Errorf("message = %q", message)
 	}
 }
 
