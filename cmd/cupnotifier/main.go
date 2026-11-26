@@ -38,6 +38,11 @@ func main() {
 	slog.SetDefault(logger)
 
 	httpClient := &http.Client{Timeout: cfg.HTTPTimeout}
+	pushoverNotifier, err := pushover.New(cfg.PushoverAPIToken, cfg.PushoverUserKey, cfg.PushoverEncryptionKey, httpClient)
+	if err != nil {
+		logger.Error("failed to initialize Pushover", "error", err)
+		os.Exit(1)
+	}
 	cupClient := cup.NewClient(cfg.CupAPIURL, httpClient)
 	store, err := state.NewFileStore(cfg.StateFile)
 	if err != nil {
@@ -46,7 +51,7 @@ func main() {
 	}
 
 	notifiers := []notification.Notifier{
-		pushover.New(cfg.PushoverAPIToken, cfg.PushoverUserKey, httpClient),
+		pushoverNotifier,
 	}
 	runner := service.New(cupClient, store, notifiers, cfg.PollInterval, logger)
 
