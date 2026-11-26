@@ -24,19 +24,28 @@ func TestSend(t *testing.T) {
 		if r.Form.Get("user") != "user-key" {
 			t.Errorf("user = %q", r.Form.Get("user"))
 		}
+		if r.Form.Has("encrypted") {
+			t.Error("plaintext request has an encrypted flag")
+		}
 		if !strings.Contains(r.Form.Get("message"), "v2.0.0") {
 			t.Errorf("message = %q", r.Form.Get("message"))
 		}
 		if r.Form.Get("url") != "https://example.com/app" {
 			t.Errorf("url = %q", r.Form.Get("url"))
 		}
+		if r.Form.Get("url_title") != "Projekt öffnen" {
+			t.Errorf("url_title = %q", r.Form.Get("url_title"))
+		}
 		_, _ = w.Write([]byte(`{"status":1,"request":"request-id"}`))
 	}))
 	defer server.Close()
 
-	notifier := New("app-token", "user-key", server.Client())
+	notifier, err := New("app-token", "user-key", "", server.Client())
+	if err != nil {
+		t.Fatal(err)
+	}
 	notifier.apiURL = server.URL
-	err := notifier.Send(context.Background(), update.Available{
+	err = notifier.Send(context.Background(), update.Available{
 		Reference:      "ghcr.io/example/app:v1",
 		Server:         "home",
 		Kind:           update.KindVersion,
@@ -61,9 +70,12 @@ func TestSendReturnsAPIError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	notifier := New("app-token", "user-key", server.Client())
+	notifier, err := New("app-token", "user-key", "", server.Client())
+	if err != nil {
+		t.Fatal(err)
+	}
 	notifier.apiURL = server.URL
-	err := notifier.Send(context.Background(), update.Available{
+	err = notifier.Send(context.Background(), update.Available{
 		Reference:    "example/app:latest",
 		Kind:         update.KindDigest,
 		RemoteDigest: "sha256:new",

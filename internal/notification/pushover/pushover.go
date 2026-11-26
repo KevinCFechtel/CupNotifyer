@@ -16,16 +16,19 @@ import (
 
 const (
 	pushoverAPIURL  = "https://api.pushover.net/1/messages.json"
+	maxTitleRunes   = 250
 	maxMessageRunes = 1024
+	maxURLRunes     = 512
 	updateTitle     = "Container-Update verfügbar"
 )
 
 type Notifier struct {
-	apiToken   string
-	userKey    string
-	targetID   string
-	httpClient *http.Client
-	apiURL     string
+	apiToken      string
+	userKey       string
+	targetID      string
+	httpClient    *http.Client
+	apiURL        string
+	encryptionKey []byte
 }
 
 type apiResponse struct {
@@ -34,15 +37,20 @@ type apiResponse struct {
 	Errors  []string `json:"errors"`
 }
 
-func New(apiToken, userKey string, httpClient *http.Client) *Notifier {
+func New(apiToken, userKey, encryptionKey string, httpClient *http.Client) (*Notifier, error) {
+	key, err := parseEncryptionKey(encryptionKey)
+	if err != nil {
+		return nil, err
+	}
 	userHash := sha256.Sum256([]byte(userKey))
 	return &Notifier{
-		apiToken:   apiToken,
-		userKey:    userKey,
-		targetID:   "pushover:" + hex.EncodeToString(userHash[:8]),
-		httpClient: httpClient,
-		apiURL:     pushoverAPIURL,
-	}
+		apiToken:      apiToken,
+		userKey:       userKey,
+		targetID:      "pushover:" + hex.EncodeToString(userHash[:8]),
+		httpClient:    httpClient,
+		apiURL:        pushoverAPIURL,
+		encryptionKey: key,
+	}, nil
 }
 
 func (n *Notifier) ID() string {
@@ -63,6 +71,37 @@ func (n *Notifier) send(ctx context.Context, title, message, projectURL string) 
 	if projectURL != "" {
 		form.Set("url", projectURL)
 		form.Set("url_title", "Projekt öffnen")
+	}
+	if n.encryptionKey != nil {
+		// Even an empty GZIP/AES/HMAC envelope exceeds the 100-character
+		// url_title limit. Let clients display the decrypted URL instead.
+		form.Del("url_title")
+		for _, field := range []struct {
+			name  string
+			limit int
+		}{
+			{"title", maxTitleRunes},
+			{"message", maxMessageRunes},
+			{"url", maxURLRunes},
+		} {
+			if !form.Has(field.name) {
+				continue
+			}
+			plaintext := form.Get(field.name)
+			var encrypted string
+			var err error
+			if field.name == "url" {
+				// Shortening a URL would silently change or break its destination.
+				encrypted, err = encryptExactField(plaintext, n.encryptionKey, field.limit)
+			} else {
+				encrypted, err = encryptField(truncateField(plaintext, field.limit), n.encryptionKey, field.limit)
+			}
+			if err != nil {
+				return fmt.Errorf("encrypt Pushover %s: %w", field.name, err)
+			}
+			form.Set(field.name, encrypted)
+		}
+		form.Set("encrypted", "1")
 	}
 
 	req, err := http.NewRequestWithContext(
@@ -163,9 +202,13 @@ func shortDigest(digest string) string {
 }
 
 func truncateMessage(message string) string {
+	return truncateField(message, maxMessageRunes)
+}
+
+func truncateField(message string, limit int) string {
 	runes := []rune(message)
-	if len(runes) <= maxMessageRunes {
+	if len(runes) <= limit {
 		return message
 	}
-	return string(runes[:maxMessageRunes-1]) + "…"
+	return string(runes[:limit-1]) + "…"
 }

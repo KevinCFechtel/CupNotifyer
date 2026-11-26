@@ -53,6 +53,7 @@ so Cup checks registries regularly; CupNotifyer then polls those results at
 | `CUP_API_URL` | yes | - | Full Cup endpoint, e.g. `http://cup:8000/api/v3/json` |
 | `PUSHOVER_API_TOKEN` | yes | - | Pushover application API token |
 | `PUSHOVER_USER_KEY` | yes | - | Pushover user or group key |
+| `PUSHOVER_ENCRYPTION_KEY` | no | empty | E2EE key: exactly 64 hexadecimal characters; empty disables encryption |
 | `POLL_INTERVAL` | no | `5m` | Interval in Go duration syntax |
 | `HTTP_TIMEOUT` | no | `15s` | Timeout for Cup and Pushover requests |
 | `HEALTHCHECK_URL` | no | `https://api.pushover.net/1/` | External endpoint used to verify internet connectivity |
@@ -61,6 +62,41 @@ so Cup checks registries regularly; CupNotifyer then polls those results at
 
 The Compose setup stores `/data/state.json` in the named
 `cupnotifier-data` volume.
+
+### Pushover end-to-end encryption
+
+Generate a 256-bit key locally:
+
+```sh
+openssl rand -hex 32
+```
+
+Set the result as `PUSHOVER_ENCRYPTION_KEY` in `.env` and configure the same key
+in every receiving Pushover iOS/Android app (version 5.0 or later). Recreate the
+service after changing the configuration (`docker compose up -d`). Desktop/browser
+clients cannot decrypt E2EE messages. Treat the key as a secret; do not commit `.env`.
+
+Following the [Pushover E2EE specification](https://pushover.net/api#e2ee) and
+[MailNotifyer](https://github.com/KevinCFechtel/MailNotifyer), each title, message,
+and project URL is independently GZIP-compressed, encrypted with
+AES-256-CBC and PKCS7 padding using a fresh random IV, authenticated with
+HMAC-SHA256, and Base64-encoded. Requests include `encrypted=1`; the key is never
+sent to Pushover. Invalid keys stop startup. Encryption failures never fall back
+to plaintext and do not mark the update as notified.
+
+Final encrypted fields respect Pushover's limits (title: 250, message: 1024,
+URL: 512 characters). Text is shortened further with a
+Unicode-safe ellipsis if necessary; ciphertext is never truncated. Project URLs
+are never shortened: if an encrypted URL cannot fit, delivery fails instead of
+sending a broken or altered link.
+The optional "Projekt öffnen" URL label is omitted in E2EE mode because the
+encryption envelope alone exceeds its 100-character limit; clients display the
+decrypted URL instead.
+
+Only notification content is protected. API credentials and routing metadata
+remain visible to Pushover; Cup API traffic, local state, and logs are not
+encrypted by this feature. Enabling E2EE does not resend updates already marked
+as notified.
 
 All application and healthcheck errors are written as human-readable,
 single-line text to standard output. For example:

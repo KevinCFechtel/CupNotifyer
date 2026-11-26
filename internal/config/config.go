@@ -17,22 +17,24 @@ const (
 )
 
 type Config struct {
-	CupAPIURL        string
-	PollInterval     time.Duration
-	HTTPTimeout      time.Duration
-	StateFile        string
-	PushoverAPIToken string
-	PushoverUserKey  string
-	LogLevel         slog.Level
+	CupAPIURL             string
+	PollInterval          time.Duration
+	HTTPTimeout           time.Duration
+	StateFile             string
+	PushoverAPIToken      string
+	PushoverUserKey       string
+	PushoverEncryptionKey string
+	LogLevel              slog.Level
 }
 
 func Load() (Config, error) {
 	cfg := Config{
-		CupAPIURL:        strings.TrimSpace(os.Getenv("CUP_API_URL")),
-		StateFile:        envOrDefault("STATE_FILE", defaultStateFile),
-		PushoverAPIToken: strings.TrimSpace(os.Getenv("PUSHOVER_API_TOKEN")),
-		PushoverUserKey:  strings.TrimSpace(os.Getenv("PUSHOVER_USER_KEY")),
-		LogLevel:         slog.LevelInfo,
+		CupAPIURL:             strings.TrimSpace(os.Getenv("CUP_API_URL")),
+		StateFile:             envOrDefault("STATE_FILE", defaultStateFile),
+		PushoverAPIToken:      strings.TrimSpace(os.Getenv("PUSHOVER_API_TOKEN")),
+		PushoverUserKey:       strings.TrimSpace(os.Getenv("PUSHOVER_USER_KEY")),
+		PushoverEncryptionKey: os.Getenv("PUSHOVER_ENCRYPTION_KEY"),
+		LogLevel:              slog.LevelInfo,
 	}
 
 	var err error
